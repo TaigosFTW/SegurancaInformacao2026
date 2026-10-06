@@ -37,6 +37,7 @@ Suba os containers e redes com o Docker Compose:
    ```
 
 Verifique se todos os serviços estão em execução:
+
     ```bash
     docker compose ps
     ```
@@ -57,13 +58,14 @@ Resultado esperado: 172.30.0.100 (172.30.0.100:3050) open.
 ## 4.3 Testes Negativos (Tráfego Bloqueado)
 
 Teste de Ping (ICMP) da LAN para a DMZ:
-    
+
     ```bash
     docker exec -it dev-workstation ping -c 3 172.30.0.100
     ```
 Resultado esperado: 100% de perda de pacotes (Packet loss / Timeout).
 
 Varredura de Portas (Nmap) não autorizadas a partir da Estação Mista:
+
     ```bash
     docker exec -it mixed-workstation nmap -p 22,80,443,8080 172.30.0.100
     ```
