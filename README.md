@@ -37,7 +37,9 @@ Suba os containers e redes com o Docker Compose:
    ```
 
 Verifique se todos os serviços estão em execução:
+    ```bash
     docker compose ps
+    ```
 
 ## 4.2 Testes Positivos (Tráfego Permitido)
 
