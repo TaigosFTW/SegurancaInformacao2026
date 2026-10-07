@@ -37,10 +37,9 @@ Suba os containers e redes com o Docker Compose:
    ```
 
 Verifique se todos os serviços estão em execução:
-
-    ```bash
-    docker compose ps
-    ```
+   ```bash
+   docker compose ps
+   ```
 
 ## 4.2 Testes Positivos (Tráfego Permitido)
 
@@ -72,6 +71,7 @@ Varredura de Portas (Nmap) não autorizadas a partir da Estação Mista:
 Resultado esperado: Portas marcadas como filtered ou filtered/unreachable.
 
 Tentativa de Acesso Direto de Serviços Isolados (ex: SSH ou Web se ativos):
+
     ```bash
     docker exec -it dev-workstation curl --connect-timeout 3 [http://172.30.0.100](http://172.30.0.100)
     ```
@@ -80,10 +80,10 @@ Tentativa de Acesso Direto de Serviços Isolados (ex: SSH ou Web se ativos):
 
    ```bash
    docker compose up -d --build
-
+   ```
     Verifique se todos os serviços estão em execução:
-    Bash
 
+    ```bash
     docker compose ps
     ```
 
@@ -92,8 +92,10 @@ Tentativa de Acesso Direto de Serviços Isolados (ex: SSH ou Web se ativos):
     Acesso TCP à porta do Firebird (3050) a partir da Dev Workstation:
     Bash
 
+    ```bash
     docker exec -it dev-workstation nc -zv 172.30.0.100 3050
-
+    ```
+    
     Resultado esperado: 172.30.0.100 (172.30.0.100:3050) open (Conexão estabelecida com sucesso).
 
     Acesso TCP à porta do Firebird (3050) a partir da Estação Mista:
