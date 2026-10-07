@@ -1,6 +1,6 @@
 # Projeto Segurança da Informação 2026
 
-## Case
+## 1. Case
 
 Uma rede local(LAN) será usada como ambiente de trabalho de desenvolvimento de software. Ela será composta por:
 
@@ -38,30 +38,31 @@ Testes negativos (o que deve ser bloqueado, ex: nmap para o banco de dados na DM
 
 Suba os containers e redes com o Docker Compose:
 
-   ```bash
-   docker compose up -d --build
-   ```
+```bash
+docker compose up -d --build
+```
 
 Verifique se todos os serviços estão em execução:
 
-   ```bash
-   docker compose ps
-   ```
+```bash
+docker compose ps
+```
 
 ### 4.2 Testes Positivos (Tráfego Permitido)
 
 Acesso TCP à porta do Firebird (3050) a partir da Dev Workstation:
 
-    ```bash
-    docker exec -it dev-workstation nc -zv 172.30.0.100 3050
-    ```
+```bash
+docker exec -it dev-workstation nc -zv 172.30.0.100 3050
+```
+
 Resultado esperado: 172.30.0.100 (172.30.0.100:3050) open (Conexão estabelecida com sucesso).
 
 Acesso TCP à porta do Firebird (3050) a partir da Estação Mista
 
-    ```bash
-    docker exec -it mixed-workstation nc -zv 172.30.0.100 3050
-    ```
+```bash
+docker exec -it mixed-workstation nc -zv 172.30.0.100 3050
+```
 
 Resultado esperado: 172.30.0.100 (172.30.0.100:3050) open.
 
@@ -69,35 +70,36 @@ Resultado esperado: 172.30.0.100 (172.30.0.100:3050) open.
 
 Teste de Ping (ICMP) da LAN para a DMZ:
 
-    ```bash
-    docker exec -it dev-workstation ping -c 3 172.30.0.100
-    ```
+```bash
+docker exec -it dev-workstation ping -c 3 172.30.0.100
+```
 
 Resultado esperado: 100% de perda de pacotes (Packet loss / Timeout).
 
 Varredura de Portas (Nmap) não autorizadas a partir da Estação Mista
 
-    ```bash
-    docker exec -it mixed-workstation nmap -p 22,80,443,8080 172.30.0.100
-    ```
+```bash
+docker exec -it mixed-workstation nmap -p 22,80,443,8080 172.30.0.100
+```
+
 Resultado esperado: Portas marcadas como filtered ou filtered/unreachable.
 
 Tentativa de Acesso Direto de Serviços Isolados (ex: SSH ou Web se ativos):
 
-    ```bash
-    docker exec -it dev-workstation curl --connect-timeout 3 [http://172.30.0.100](http://172.30.0.100)
-    ```
+```bash
+docker exec -it dev-workstation curl --connect-timeout 3 [http://172.30.0.100](http://172.30.0.100)
+```
 
 ## Para executar
 
 Suba os containers e redes com o Docker Compose:
 
-    ```bash
-    docker compose up -d --build
-    ```
+```bash
+docker compose up -d --build
+```
 
 Verifique se todos os serviços estão em execução:
 
-    ```bash
-    docker compose ps
-    ```
+```bash
+docker compose ps
+```
