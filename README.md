@@ -51,7 +51,8 @@ Verifique se todos os serviços estão em execução:
 ## 4.2 Testes Positivos (Tráfego Permitido)
 
 Acesso TCP à porta do Firebird (3050) a partir da Dev Workstation:
-    ```bash
+
+    ```
     docker exec -it dev-workstation nc -zv 172.30.0.100 3050
     ```
 Resultado esperado: 172.30.0.100 (172.30.0.100:3050) open (Conexão estabelecida com sucesso).
