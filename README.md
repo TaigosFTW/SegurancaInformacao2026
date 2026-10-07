@@ -90,7 +90,6 @@ Tentativa de Acesso Direto de Serviços Isolados (ex: SSH ou Web se ativos):
 ## 4.2 Testes Positivos (Tráfego Permitido)
 
     Acesso TCP à porta do Firebird (3050) a partir da Dev Workstation:
-    Bash
 
     ```bash
     docker exec -it dev-workstation nc -zv 172.30.0.100 3050
