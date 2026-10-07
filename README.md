@@ -95,22 +95,24 @@ Tentativa de Acesso Direto de Serviços Isolados (ex: SSH ou Web se ativos):
     ```bash
     docker exec -it dev-workstation nc -zv 172.30.0.100 3050
     ```
-    
+
     Resultado esperado: 172.30.0.100 (172.30.0.100:3050) open (Conexão estabelecida com sucesso).
 
     Acesso TCP à porta do Firebird (3050) a partir da Estação Mista:
-    Bash
 
+    ```bash
     docker exec -it mixed-workstation nc -zv 172.30.0.100 3050
+    ```
 
     Resultado esperado: 172.30.0.100 (172.30.0.100:3050) open.
 
 4.3 Testes Negativos (Tráfego Bloqueado)
 
     Teste de Ping (ICMP) da LAN para a DMZ:
-    Bash
 
+    ```bash
     docker exec -it dev-workstation ping -c 3 172.30.0.100
+    ```
 
     Resultado esperado: 100% de perda de pacotes (Packet loss / Timeout).
 
