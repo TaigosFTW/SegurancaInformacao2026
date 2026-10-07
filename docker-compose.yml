@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  # Firewall / Roteador Intermediário
+  firewall:
+    build:
+      context: .
+      dockerfile: Dockerfile.firewall
+    container_name: firewall-gateway
+    cap_add:
+      - NET_ADMIN
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      lan_net:
+        ipv4_address: 172.20.0.2
+      dmz_net:
+        ipv4_address: 172.30.0.2
+
+  # Servidor de Banco de Dados na DMZ
+  firebird-db:
+    image: jacobcallahan/firebird:2.5
+    container_name: firebird-db
+    networks:
+      dmz_net:
+        ipv4_address: 172.30.0.100
+
+  # Estação de Desenvolvimento (LAN)
+  dev-workstation:
+    image: alpine:latest
+    container_name: dev-workstation
+    command: >
+      sh -c "ip route del default &&
+             ip route add default via 172.20.0.2 &&
+             apk add --no-cache netcat-openbsd nmap curl iputils &&
+             tail -f /dev/null"
+    cap_add:
+      - NET_ADMIN
+    networks:
+      lan_net:
+        ipv4_address: 172.20.0.10
+
+  # Estação de Uso Misto (LAN)
+  mixed-workstation:
+    image: alpine:latest
+    container_name: mixed-workstation
+    command: >
+      sh -c "ip route del default &&
+             ip route add default via 172.20.0.2 &&
+             apk add --no-cache netcat-openbsd nmap curl iputils &&
+             tail -f /dev/null"
+    cap_add:
+      - NET_ADMIN
+    networks:
+      lan_net:
+        ipv4_address: 172.20.0.20
+
+networks:
+  lan_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+  dmz_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.0.0/16
