@@ -48,7 +48,7 @@ Verifique se todos os serviços estão em execução:
    docker compose ps
    ```
 
-## 4.2 Testes Positivos (Tráfego Permitido)
+### 4.2 Testes Positivos (Tráfego Permitido)
 
 Acesso TCP à porta do Firebird (3050) a partir da Dev Workstation:
 
@@ -65,9 +65,10 @@ Acesso TCP à porta do Firebird (3050) a partir da Estação Mista
 
 Resultado esperado: 172.30.0.100 (172.30.0.100:3050) open.
 
-## 4.3 Testes Negativos (Tráfego Bloqueado)
+### 4.3 Testes Negativos (Tráfego Bloqueado)
 
 Teste de Ping (ICMP) da LAN para a DMZ:
+
     ```bash
     docker exec -it dev-workstation ping -c 3 172.30.0.100
     ```
@@ -75,22 +76,28 @@ Teste de Ping (ICMP) da LAN para a DMZ:
 Resultado esperado: 100% de perda de pacotes (Packet loss / Timeout).
 
 Varredura de Portas (Nmap) não autorizadas a partir da Estação Mista
+
     ```bash
     docker exec -it mixed-workstation nmap -p 22,80,443,8080 172.30.0.100
     ```
 Resultado esperado: Portas marcadas como filtered ou filtered/unreachable.
 
 Tentativa de Acesso Direto de Serviços Isolados (ex: SSH ou Web se ativos):
+
     ```bash
     docker exec -it dev-workstation curl --connect-timeout 3 [http://172.30.0.100](http://172.30.0.100)
     ```
 
+## Para executar
+
 Suba os containers e redes com o Docker Compose:
+
     ```bash
     docker compose up -d --build
     ```
 
 Verifique se todos os serviços estão em execução:
+
     ```bash
     docker compose ps
     ```
