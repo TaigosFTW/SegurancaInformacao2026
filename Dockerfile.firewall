@@ -1,0 +1,6 @@
+FROM alpine:latest
+RUN apk add --no-cache iptables iproute2
+COPY init-firewall.sh /init-firewall.sh
+RUN chmod +x /init-firewall.sh
+ENTRYPOINT ["/init-firewall.sh"]
+CMD ["tail", "-f", "/dev/null"]

@@ -18,6 +18,7 @@ iptables -A FORWARD -m state --state ESTABLISHED,RELATED -j ACCEPT
 
 # Libera tráfego TCP na porta 3050 (Firebird) vindo da LAN com destino à DMZ
 iptables -A FORWARD -s 172.20.0.0/16 -d 172.30.0.100 -p tcp --dport 3050 -j ACCEPT
+iptables -t nat -A POSTROUTING -s 172.20.0.0/16 -d 172.30.0.100 -p tcp --dport 3050 -j MASQUERADE
 
 # Mantém o container ativo após aplicar as regras
 exec "$@"

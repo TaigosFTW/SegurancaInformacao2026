@@ -1,7 +1,4 @@
-version: '3.8'
-
 services:
-  # Firewall / Roteador Intermediário
   firewall:
     build:
       context: .
@@ -16,38 +13,34 @@ services:
         ipv4_address: 172.20.0.2
       dmz_net:
         ipv4_address: 172.30.0.2
-
-  # Servidor de Banco de Dados na DMZ
   firebird-db:
-    image: jacobcallahan/firebird:2.5
+    image: williandoamor/firebird2.5-sc:latest
     container_name: firebird-db
     networks:
       dmz_net:
         ipv4_address: 172.30.0.100
-
-  # Estação de Desenvolvimento (LAN)
   dev-workstation:
-    image: alpine:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.workstation
     container_name: dev-workstation
     command: >
       sh -c "ip route del default &&
              ip route add default via 172.20.0.2 &&
-             apk add --no-cache netcat-openbsd nmap curl iputils &&
              tail -f /dev/null"
     cap_add:
       - NET_ADMIN
     networks:
       lan_net:
         ipv4_address: 172.20.0.10
-
-  # Estação de Uso Misto (LAN)
   mixed-workstation:
-    image: alpine:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.workstation
     container_name: mixed-workstation
     command: >
       sh -c "ip route del default &&
              ip route add default via 172.20.0.2 &&
-             apk add --no-cache netcat-openbsd nmap curl iputils &&
              tail -f /dev/null"
     cap_add:
       - NET_ADMIN

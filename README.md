@@ -82,24 +82,14 @@ Varredura de Portas (Nmap) não autorizadas a partir da Estação Mista
 docker exec -it mixed-workstation nmap -p 22,80,443,8080 172.30.0.100
 ```
 
+```bash
+docker exec mixed-workstation nmap -Pn -p 22,80,443 172.30.0.100
+```
+
 Resultado esperado: Portas marcadas como filtered ou filtered/unreachable.
 
 Tentativa de Acesso Direto de Serviços Isolados (ex: SSH ou Web se ativos):
 
 ```bash
-docker exec -it dev-workstation curl --connect-timeout 3 [http://172.30.0.100](http://172.30.0.100)
-```
-
-## Para executar
-
-Suba os containers e redes com o Docker Compose:
-
-```bash
-docker compose up -d --build
-```
-
-Verifique se todos os serviços estão em execução:
-
-```bash
-docker compose ps
+docker exec -it dev-workstation curl --connect-timeout 3 http://172.30.0.100
 ```
