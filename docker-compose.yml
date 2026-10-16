@@ -14,7 +14,7 @@ services:
       dmz_net:
         ipv4_address: 172.30.0.2
   firebird-db:
-    image: williandoamor/firebird2.5-sc:latest
+    image: williandoamor/firebird2.5-sc@sha256:434554e0c7c7026ab6e3cf66f8fe4da2e2496061cc4ffbcb97a4605205b05172
     container_name: firebird-db
     networks:
       dmz_net:

@@ -1,95 +1,133 @@
-# Projeto Segurança da Informação 2026
+# Projeto de Segurança da Informação 2026
 
-## 1. Case
+## 1. Definição do case
 
-Uma rede local(LAN) será usada como ambiente de trabalho de desenvolvimento de software. Ela será composta por:
+### 1.1 Contexto
 
-1. Um servidor que irá conter um banco de dados Firebird 2.5
-2. Um computador que será utilizado exclusivamente para desenvolvimento de software
-3. Um computador que será utilizado para uso pessoal e de desenvolvimento.
+O cenário representa uma pequena empresa de desenvolvimento de software que utiliza um banco de dados Firebird 2.5 para armazenar dados de clientes, produtos, usuários e resultados de testes. A empresa possui:
 
-## 2. Diagnóstico
+- uma estação exclusiva para desenvolvimento (`dev-workstation`);
+- uma estação usada para atividades pessoais e homologação (`mixed-workstation`);
+- um servidor dedicado ao banco de dados (`firebird-db`).
 
-### 2.1 Cenário Atual
+O serviço que precisa operar entre as redes é o Firebird, disponibilizado na porta TCP 3050. As estações precisam consultar o banco, mas não devem ter acesso a outras portas ou a serviços que possam ser adicionados posteriormente à DMZ.
 
-O banco de dados está contido no computador próprio para desenvolvimento e o computador de desenvolvimento e uso pessoal conecta ao computador ao computador exclusivo á desenvolviemnto para acessar e alterar dados do banco de dados
+### 1.2 Topologia simulada
 
-### 2.2 Solução
+```text
+dev-workstation       172.20.0.10 ─┐
+mixed-workstation     172.20.0.20 ─┼─ lan_net ── firewall-gateway ── dmz_net ── firebird-db
+firewall LAN          172.20.0.2  ─┘                         172.30.0.2       172.30.0.100
+```
 
-Delegar um servidor apenas á manutenção e armazenamento do banco de dados, configurar o servidor para poder ser acessado pelo computador próprio para desenvolvimento e de uso pessoal e desenvolvimento
+As redes são bridges Docker distintas. As workstations pertencem somente à LAN e o banco pertence somente à DMZ. O firewall é o único container conectado às duas redes e funciona como roteador e filtro.
 
-## 3. Matriz de Regras de Segurança
+## 2. Diagnóstico: cenário atual vs. solução
 
-| Origem | Destino | Porta / Protocolo | Ação | Justificativa do Negócio |
+### 2.1 Cenário atual e problemas mapeados
+
+No cenário sem segmentação, o banco poderia ficar na mesma rede das estações. Isso cria os seguintes riscos:
+
+- qualquer máquina da rede poderia tentar acessar diretamente o banco;
+- não haveria uma fronteira clara entre usuários, desenvolvimento e dados;
+- varreduras de portas e tentativas de conexão seriam mais difíceis de controlar;
+- uma estação comprometida poderia alcançar serviços que não são necessários ao negócio;
+- o tráfego permitido não seria documentado por origem, destino e finalidade.
+
+### 2.2 Proposta de solução
+
+O banco foi colocado em uma DMZ isolada da LAN. Todo tráfego entre as redes precisa passar pelo `firewall-gateway`, que possui `NET_ADMIN`, encaminhamento IPv4 habilitado e regras iptables.
+
+A política da cadeia `FORWARD` é `DROP` por padrão. A única abertura de nova conexão é TCP da LAN para `172.30.0.100:3050`. O tráfego de retorno de conexões permitidas é aceito como `ESTABLISHED,RELATED`. O NAT de saída é aplicado somente ao fluxo TCP permitido para garantir o caminho de retorno pelo firewall.
+
+Essa arquitetura aplica menor privilégio: as estações conseguem utilizar o banco, mas não conseguem usar ICMP nem acessar outras portas da DMZ através do roteador.
+
+## 3. Matriz de regras de segurança
+
+| Origem | Destino | Porta / protocolo | Ação | Justificativa do negócio |
 | :--- | :--- | :--- | :--- | :--- |
-| **Dev Workstation** (`172.20.0.10`) | **Firebird DB** (`172.30.0.100`) | TCP 3050 | **ACCEPT** | Permite consultas e desenvolvimentos diretos no banco de dados. |
-| **Mixed Workstation** (`172.20.0.20`) | **Firebird DB** (`172.30.0.100`) | TCP 3050 | **ACCEPT** | Permite acesso ao banco para homologação e testes de software. |
-| **Rede LAN** (`172.20.0.0/16`) | **Firebird DB** (`172.30.0.100`) | ICMP (Ping) | **DROP** | Bloqueia mapeamento e varredura de rede (reconascimento ICMP). |
-| **Rede LAN** (`172.20.0.0/16`) | **Firebird DB** (`172.30.0.100`) | Qualquer outra porta | **DROP** | Política de menor privilégio para impedir conexões indesejadas. |
-| **Qualquer** | **Qualquer** | Qualquer | **DROP** | Política padrão da cadeia FORWARD. |
+| LAN (`172.20.0.0/16`) | Firebird (`172.30.0.100`) | TCP 3050, nova conexão | **ACCEPT** | Permite consultas e operações necessárias ao desenvolvimento e à homologação. |
+| Firebird (`172.30.0.100`) | LAN (`172.20.0.0/16`) | TCP de retorno de conexão permitida | **ACCEPT** | Permite respostas do banco sem abrir novas conexões iniciadas pela DMZ. |
+| LAN (`172.20.0.0/16`) | DMZ (`172.30.0.0/16`) | ICMP | **DROP** | Impede ping, descoberta e reconhecimento básico da rede. |
+| LAN (`172.20.0.0/16`) | Firebird (`172.30.0.100`) | Qualquer porta diferente de TCP 3050 | **DROP** | Impede acesso direto a serviços não autorizados. |
+| Qualquer origem | Qualquer destino encaminhado | Qualquer protocolo não previsto | **DROP** | Política padrão de menor privilégio da cadeia `FORWARD`. |
 
-## 4. Metodologia de Testes e Validação
+> Observação: `INPUT` e `OUTPUT` do container firewall permanecem em `ACCEPT` para a operação do próprio gateway. A política de bloqueio entre LAN e DMZ é aplicada na cadeia `FORWARD`.
 
-### 4.1 Como exectuar o projeto
+## 4. Requisitos técnicos implementados
 
-Passo a passo de como o professor/avaliador deve testar o ambiente.
-Testes positivos (o que deve funcionar, ex: curl <http://dmz-web>).
-Testes negativos (o que deve ser bloqueado, ex: nmap para o banco de dados na DMZ a partir do cliente).
+- `lan_net`: bridge Docker com subnet `172.20.0.0/16`.
+- `dmz_net`: bridge Docker com subnet `172.30.0.0/16`.
+- `firewall-gateway`: conectado às duas redes, com `NET_ADMIN`.
+- `net.ipv4.ip_forward=1`: habilita o roteamento entre as redes.
+- `FORWARD DROP`: bloqueia o tráfego encaminhado por padrão.
+- Firebird 2.5: imagem fixada por digest no Compose para maior reprodutibilidade.
+- Ferramentas de teste: instaladas na imagem das workstations durante o build, antes da aplicação das rotas restritivas.
 
-Suba os containers e redes com o Docker Compose:
+## 5. Metodologia de testes e validação
+
+### 5.1 Inicialização
+
+Na raiz do projeto, execute:
 
 ```bash
 docker compose up -d --build
-```
-
-Verifique se todos os serviços estão em execução:
-
-```bash
 docker compose ps
 ```
 
-### 4.2 Testes Positivos (Tráfego Permitido)
+Os quatro serviços devem estar com status `Up`:
 
-Acesso TCP à porta do Firebird (3050) a partir da Dev Workstation:
+- `firewall-gateway`;
+- `firebird-db`;
+- `dev-workstation`;
+- `mixed-workstation`.
+
+### 5.2 Testes positivos
+
+As duas estações devem alcançar a porta autorizada do Firebird:
 
 ```bash
-docker exec -it dev-workstation nc -zv 172.30.0.100 3050
+docker exec dev-workstation nc -zvw 3 172.30.0.100 3050
+docker exec mixed-workstation nc -zvw 3 172.30.0.100 3050
 ```
 
-Resultado esperado: 172.30.0.100 (172.30.0.100:3050) open (Conexão estabelecida com sucesso).
+Resultado esperado: `succeeded` ou `open`.
 
-Acesso TCP à porta do Firebird (3050) a partir da Estação Mista
+### 5.3 Testes negativos
+
+O ICMP deve ser bloqueado:
 
 ```bash
-docker exec -it mixed-workstation nc -zv 172.30.0.100 3050
+docker exec dev-workstation ping -c 3 -W 2 172.30.0.100
 ```
 
-Resultado esperado: 172.30.0.100 (172.30.0.100:3050) open.
+Resultado esperado: 100% de perda de pacotes.
 
-### 4.3 Testes Negativos (Tráfego Bloqueado)
-
-Teste de Ping (ICMP) da LAN para a DMZ:
+Como o ping é bloqueado, use `-Pn` no Nmap para testar portas sem depender de ICMP:
 
 ```bash
-docker exec -it dev-workstation ping -c 3 172.30.0.100
+docker exec mixed-workstation nmap -Pn -p 22,80,443,8080 172.30.0.100
 ```
 
-Resultado esperado: 100% de perda de pacotes (Packet loss / Timeout).
+Resultado esperado: portas `filtered` ou `filtered/unreachable`.
 
-Varredura de Portas (Nmap) não autorizadas a partir da Estação Mista
+Uma tentativa de conexão a uma porta não autorizada também deve expirar:
 
 ```bash
-docker exec -it mixed-workstation nmap -p 22,80,443,8080 172.30.0.100
+docker exec mixed-workstation nc -zvw 3 172.30.0.100 22
 ```
 
+### 5.4 Inspeção das regras aplicadas
+
 ```bash
-docker exec mixed-workstation nmap -Pn -p 22,80,443 172.30.0.100
+docker exec firewall-gateway iptables -S FORWARD
+docker exec firewall-gateway iptables -t nat -S POSTROUTING
 ```
 
-Resultado esperado: Portas marcadas como filtered ou filtered/unreachable.
+### 5.5 Encerramento
 
-Tentativa de Acesso Direto de Serviços Isolados (ex: SSH ou Web se ativos):
+Para remover os containers e as redes criadas pelo Compose:
 
 ```bash
-docker exec -it dev-workstation curl --connect-timeout 3 http://172.30.0.100
+docker compose down
 ```
